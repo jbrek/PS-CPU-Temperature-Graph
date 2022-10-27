@@ -5,7 +5,7 @@
 #copy LibreHardwareMonitorLib.dll to script DIR
 
 
-function get-temp{
+function get-tempcpu{
 #https://www.reddit.com/r/PowerShell/comments/pjvoxm/get_cpu_temperature_wo_wmi/
 Add-Type -Path LibreHardwareMonitorLib.dll
 $computer = New-Object LibreHardwareMonitor.Hardware.Computer
@@ -13,9 +13,7 @@ $computer.IsCpuEnabled = $TRUE
 #add catch error
 $computer.Open()
     foreach ($hardware in $computer.Hardware)
-    {
-        #write-host $hardware "HARDWARE"
-    
+    {  
         foreach ($sensor in $hardware.Sensors)
         { 
             if($sensor.Name -eq "Core Average")
@@ -23,12 +21,8 @@ $computer.Open()
                 Write-host $sensor.Name $sensor.Value
                 $tempHastTable.add($stopwatch.Elapsed.totalseconds,$sensor.Value)
                }   
-        } 
-        
-        
+        }        
     }
-
-
 }
 
 
@@ -47,7 +41,7 @@ if ($args.count -eq 2)
 }
 else
 {
-write-host "Example collect data for ~360 seconds - .\get-cpu-temp.ps1 360 1"
+write-host "Example collect data for ~360 seconds, polling 1 second .\get-cpu-temp.ps1 360 1"
 Write-host "default is ~5 seconds"
 Write-host "default polling is  .5 second"
 $poller = .5
@@ -56,10 +50,10 @@ $timer = 5
 Do
 {
 #calling function     
-get-temp  
+get-tempcpu  
 start-sleep $poller
 #write-host $stopwatch.Elapsed.totalseconds
-}While([math]::Round($stopwatch.Elapsed.totalseconds) -ne $timer )
+}While([math]::Round($stopwatch.Elapsed.totalseconds) -le $timer )
 
 
 
@@ -69,8 +63,8 @@ start-sleep $poller
 
 # chart object
     $chart1 = New-object System.Windows.Forms.DataVisualization.Charting.Chart
-    $chart1.Width = 1024
-    $chart1.Height = 1024
+    $chart1.Width = 3840
+    $chart1.Height = 2160
     $chart1.BackColor = [System.Drawing.Color]::White
 
 # title 
@@ -89,17 +83,15 @@ start-sleep $poller
    $chartarea.AxisY.Title = "temperature"
    $chartarea.AxisX.Title = "totalseconds"
    $chartarea.AxisY.Interval = 1
-   $chartarea.AxisX.Interval = 1
+   $chartarea.AxisX.Interval = 5
    $chart1.ChartAreas.Add($chartarea)
    $chart1.Series.Add('CPU-Temperature')
-    
+# dump hash table into chart   
    $tempHastTable.GetEnumerator() | ForEach-Object{
-    $x = [double]$_.key
-    $y = [double]$_.Value
-    #write-host $x "-" $y
+    $x = [double][math]::round(($_.key),2)
+    $y = [double][math]::round(($_.Value),2)
     $chart1.Series["CPU-Temperature"].Points.addxy($x,$y) 
-}
-
+    }
 # data series
    $Chart1.Series["CPU-Temperature"].ChartType = "Line"
    $chart1.Series["CPU-Temperature"].IsVisibleInLegend = $true
@@ -109,15 +101,18 @@ start-sleep $poller
    $chart1.Series["CPU-Temperature"].color = "red"
   
 # save chart
-write-host  $$scriptpath
 $chart1.SaveImage("$scriptpath\temperaturechart-$filename.png","png") 
+$chart1.SaveImage("$scriptpath\temperaturechart-$filename.emf","Emf") 
 
+# echo hashtable  secondds , C
 $tempHastTable.GetEnumerator() | ForEach-Object{
-    $message = '{0} , {1} , celsius' -f $_.key, $_.value
+    $message = '{0} , {1}' -f $_.key, $_.value
     Write-Output $message
 }
+
+
 $stopwatch.stop()
-#$computer.close()
+$computer.close()
 Write-host "Chart saved to $scriptpath\temperaturechart-$filename.png"
 Write-host "TotalSeconds:" $stopwatch.Elapsed.totalseconds
 

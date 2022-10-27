@@ -1,0 +1,12 @@
+#Download https://github.com/LibreHardwareMonitor/LibreHardwareMonitor 
+#copy LibreHardwareMonitorLib.dll to script DIR
+
+
+Example collect data for ~360 seconds, polling 1 second .\get-cpu-temp.ps1 360 1
+default is ~5 seconds
+default polling is  .5 second
+
+
+#Credit is due to links in comments
+#For Hashtable example, used it.  
+
