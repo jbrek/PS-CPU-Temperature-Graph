@@ -11,7 +11,7 @@ Add-Type -Path LibreHardwareMonitorLib.dll
 $computer = New-Object LibreHardwareMonitor.Hardware.Computer
 $computer.IsCpuEnabled = $TRUE
 #add catch error
-$computer.Open()
+$computer.Open();
     foreach ($hardware in $computer.Hardware)
     {  
         foreach ($sensor in $hardware.Sensors)
@@ -23,9 +23,11 @@ $computer.Open()
                }   
         }        
     }
+    #write-host "CLOSE"
+    #$computer.close();
 }
 
-
+#Start of Script
 $stopwatch = [system.diagnostics.stopwatch]::StartNew()
 $filename=(Get-date).tostring("MMddyyyy-HHmmss")
 #$computer.IsGPUEnabled = $TRUE
@@ -42,10 +44,10 @@ if ($args.count -eq 2)
 else
 {
 write-host "Example collect data for ~360 seconds, polling 1 second .\get-cpu-temp.ps1 360 1"
-Write-host "default is ~5 seconds"
-Write-host "default polling is  .5 second"
-$poller = .5
-$timer = 5
+Write-host "default is 60 seconds"
+Write-host "default polling is  1 second"
+$poller = 1
+$timer = 60
 }
 Do
 {
@@ -104,17 +106,18 @@ start-sleep $poller
 $chart1.SaveImage("$scriptpath\temperaturechart-$filename.png","png") 
 $chart1.SaveImage("$scriptpath\temperaturechart-$filename.emf","Emf") 
 
-# echo hashtable  secondds , C
-$tempHastTable.GetEnumerator() | ForEach-Object{
-    $message = '{0} , {1}' -f $_.key, $_.value
-    Write-Output $message
-}
+# echo hashtable  secondds , C temp
+Write-host "export data to screen, copy and paste save as csv"
+#$tempHastTable.GetEnumerator() | ForEach-Object{
+#    $message = '{0} , {1}' -f $_.key, $_.value
+#    Write-Output $message
+#}
 
 
 $stopwatch.stop()
-$computer.close()
 Write-host "Chart saved to $scriptpath\temperaturechart-$filename.png"
 Write-host "TotalSeconds:" $stopwatch.Elapsed.totalseconds
+mspaint.exe "$scriptpath\temperaturechart-$filename.emf"
 
    
 
